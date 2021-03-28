@@ -292,7 +292,7 @@ echo "S-PR Prequsites verfied" > $PORT_STATUS
    echo "maximum_object_size 40 GB" >> /etc/squid/squid.conf
    echo "acl localnet src 192.7.0.0/16   # RFC1918 possible internal network" >> /etc/squid/squid.conf
 
-   echo "icp_port 3130${process_number}" >> /etc/squid/squid.conf
+   echo "icp_port 3130" >> /etc/squid/squid.conf
    echo "icp_access allow localnet" >> /etc/squid/squid.conf 
    squid -z
 
