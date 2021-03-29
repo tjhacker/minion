@@ -137,12 +137,11 @@ Vagrant.configure("2") do |config|
 # VAGRANT_ROLE imported from Vagrantfile
 export VAGRANT_ROLE=$VAGRANT_ROLE
 export LOCAL_IRISIP=$LOCAL_IRISIP
-export REMOTE_IRISIP=$REMOTE_IRISIP
+##%% export REMOTE_IRISIP=$REMOTE_IRISIP
 export SSH_PORT=$SSH_PORT
 echo "ABC"
 echo "Role is" $VAGRANT_ROLE
 echo "LOCAL IRISIP is" $LOCAL_IRISIP
-echo "REMOTE IRISIP is" $REMOTE_IRISIP
 
 
 
@@ -172,16 +171,15 @@ export LOCAL_INTERFACE="eth0"
 
 
 	yum -y update
-####	yum -y install git
-####	yum -y install dnsmasq dnsmasq-utils tftp-server tftp syslinux-tftpboot ipxe-bootimgs git xz-devel genisoimage squid lighttpd php mod_fcgid lighttpd-fastcgi mod_fastcgi 
-####yum -y install git strongswan virt-manager libvirt-client fail2ban openssl-devel pam-devel selinux-policy-devel python supervisor policycoreutils
 # Centos7 yum policycoreutils-python
 
 yum -y install policycoreutils-python
 
+# Update MACAddressPolicy to allow MAC addr changes
+### sed -i 's/^MACAddressPolicy=persistent/MACAddressPolicy=none/' /usr/lib/systemd/network/99-default.link 
 
  # Install fail2ban for more protection against offensive
-   yum -y install virt-manager libvirt-client fail2ban
+    yum -y install virt-manager libvirt-client fail2ban
     cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
     cp /vagrant_data/jail.local /etc/fail2ban/jail.local
     systemctl enable fail2ban
@@ -193,21 +191,10 @@ yum -y install policycoreutils-python
        yum -y install duo_unix
 
 
-#        cd /usr/local/src
-#        wget https://rdoproject.org/repos/rdo-release.rpm
-#        rpm -i rdo-release.rpm
-#        yum -y install openvswitch libibverbs
 
 # Moving common here...
 
 
-# Get Etherate to check minion ports
-##    timeout -s INT 120 ./etherate -i vxlan0 -Q 1000 1000 -t 5
-###      cd /usr/local/src
-###      git clone https://github.com/jwbensley/Etherate.git
-###      cd Etherate
-###      ./configure.sh
-###      make install
 
 # Stage 3 - set up network security rules
 # %All roles    
@@ -217,41 +204,24 @@ yum -y install policycoreutils-python
 	then
 	  	firewall-cmd --add-interface=eth0 --zone=dmz --permanent
 	       	firewall-cmd --add-service=ssh --zone=dmz --permanent # to be able to ssh into the system from vagrant
+		systemctl stop NetworkManager
+		firewall-cmd --reload
+		systemctl start NetworkManager
+	##	nmcli con mod "System eth0" ipv4.dns $LOCALIP
+	##      nmcli con mod "System eth0" ipv4.ignore-auto-dns yes
+		nmcli con up "System eth0"
+		nmcli general hostname mars.load
 	fi
-
-        if [ $VAGRANT_ROLE == "dnsmasq" ]
-	then
-
-                yum -y install policycoreutils-python
-		semanage fcontext -a -t net_conf_t /etc/sysconfig/network-scripts/ifcfg-eth1 # Fix selinux problem
-		restorecon -R /etc/sysconfig/network-scripts/ifcfg-eth1
-		systemctl restart firewalld.service
-		firewall-cmd --add-interface=eth1 --zone=dmz --permanent
-	fi
-
-	systemctl stop NetworkManager
-	firewall-cmd --reload
-	systemctl start NetworkManager
-
-
- if [ $VAGRANT_ROLE == "jumphost" ] 	
- then
-##	nmcli con mod "System eth0" ipv4.dns $LOCALIP
-##      nmcli con mod "System eth0" ipv4.ignore-auto-dns yes
-	 nmcli con up "System eth0"
-	nmcli general hostname mars.load
-
- fi
 
 
 # % DNSMasq server
         if [ $VAGRANT_ROLE == "dnsmasq" ]
 	then
 	
-	HostDNS=`fgrep -m 1 nameserver /etc/resolv.conf | sed 's/nameserver //'`
-	sed -i "s/$HostDNS/$DNS/" /etc/resolv.conf
-	echo "nameserver $DNS" >> /etc/resolv.conf
-         chattr +i /etc/resolv.conf # Lock the file to prevent changes.
+###	HostDNS=`fgrep -m 1 nameserver /etc/resolv.conf | sed 's/nameserver //'`
+###	sed -i "s/$HostDNS/$DNS/" /etc/resolv.conf
+###	echo "nameserver $DNS" >> /etc/resolv.conf
+###        chattr +i /etc/resolv.conf # Lock the file to prevent changes.
 
 
 		# Network routing rules and DNS
@@ -276,15 +246,12 @@ yum -y install policycoreutils-python
 	systemctl stop NetworkManager
 	firewall-cmd --reload
 	systemctl start NetworkManager
-
 yum -y install policycoreutils-python-utils
-
 	semanage port -a -t ssh_port_t -p tcp $SSH_PORT
 
  systemctl restart sshd # command to get into VM is " vagrant ssh -- '-p 1234' "
 
 cd /vagrant_data
-echo "REMOTE_IRISIP" $REMOTE_IRISIP
 echo "LOCAL IP" $LOCALIP
 
 	SHELL
