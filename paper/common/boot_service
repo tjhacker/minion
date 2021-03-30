@@ -275,7 +275,7 @@ echo "S-PR Prequsites verfied" > $PORT_STATUS
 	sed -i 's/server.use-ipv6 = "enable"/server.use-ipv6 = "disable"/' /etc/lighttpd/lighttpd.conf
 	# Add fastCGI conf to lighttpd 
 ##	cat /usr/local/src/ipxe/ipxehttpproxy/fastcgi.conf_addition >> /etc/lighttpd/conf.d/fastcgi.conf
-	cat /home/vagrant/ipxe/ipxehttpproxy/fastcgi.conf_addition >> /etc/lighttpd/conf.d/fastcgi.conf
+	cat /home/vagrant/ipxehttpproxy/fastcgi.conf_addition >> /etc/lighttpd/conf.d/fastcgi.conf
 ##	cp /usr/local/src/ipxe/ipxehttpproxy/foo.php /var/www/lighttpd/foo.php
 	cp /home/vagrant/ipxehttpproxy/foo.php /var/www/lighttpd/foo.php
 ##	cp /usr/local/src/ipxe/ipxehttpproxy/dhcp_opt.php /var/www/lighttpd/dhcp_opt.php
