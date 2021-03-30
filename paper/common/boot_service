@@ -277,9 +277,9 @@ echo "S-PR Prequsites verfied" > $PORT_STATUS
 ##	cat /usr/local/src/ipxe/ipxehttpproxy/fastcgi.conf_addition >> /etc/lighttpd/conf.d/fastcgi.conf
 	cat /home/vagrant/ipxe/ipxehttpproxy/fastcgi.conf_addition >> /etc/lighttpd/conf.d/fastcgi.conf
 ##	cp /usr/local/src/ipxe/ipxehttpproxy/foo.php /var/www/lighttpd/foo.php
-	cp /home/vagrant/ipxe/ipxehttpproxy/foo.php /var/www/lighttpd/foo.php
+	cp /home/vagrant/ipxehttpproxy/foo.php /var/www/lighttpd/foo.php
 ##	cp /usr/local/src/ipxe/ipxehttpproxy/dhcp_opt.php /var/www/lighttpd/dhcp_opt.php
-	cp /home/vagrant/ipxe/ipxehttpproxy/dhcp_opt.php /var/www/lighttpd/dhcp_opt.php
+	cp /home/vagrant/ipxehttpproxy/dhcp_opt.php /var/www/lighttpd/dhcp_opt.php
 	mkdir /var/www/localhost
 	cp /etc/php.ini /var/www/localhost
 	sed -i "s:;cgi.fix_pathinfo:cgi.fix_pathinfo:" /var/www/localhost/php.ini
@@ -288,7 +288,7 @@ echo "S-PR Prequsites verfied" > $PORT_STATUS
 
 #### Configure Kickstart file for remote booting
 ##	cp /usr/local/src/ipxe/ipxehttpproxy/ks.cfg /var/www/lighttpd/ks.cfg
-	cp /home/vagrant/ipxe/ipxehttpproxy/ks.cfg /var/www/lighttpd/ks.cfg
+	cp /home/vagrant/ipxehttpproxy/ks.cfg /var/www/lighttpd/ks.cfg
 
 #### Configure NFS server 
         sed -i 's:# tcp=y:udp=y\ntcp=y:' /etc/nfs.conf
