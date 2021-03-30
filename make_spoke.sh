@@ -9,6 +9,6 @@ rm mspoke/certbundle/Vagrantfile
 cp pam_duo.conf mspoke/certbundle
 cd mspoke
 vagrant up
-vagrant ssh -- '-p 1234'
+vagrant ssh 
 
 
