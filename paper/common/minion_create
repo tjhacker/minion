@@ -505,7 +505,8 @@ echo "V-C VXLan Port Created" > $PORT_STATUS
         if [ $VAGRANT_ROLE == "spoke" ]
 	then
 		# build and install etherate
-		pushd /usr/local/src
+###		pushd /usr/local/src
+		pushd /home/vagrant
 		git clone https://github.com/jwbensley/Etherate.git
 		cd Etherate
 		./configure.sh

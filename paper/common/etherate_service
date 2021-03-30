@@ -117,7 +117,8 @@ echo "S-LC Create configuration files" > $MINION_SERVICE
 
 	# Get Etherate to check minion ports
 	##    timeout -s INT 120 ./etherate -i vxlan0 -Q 1000 1000 -t 5
-		      pushd /usr/local/src
+##		      pushd /usr/local/src
+		      pushd /home/vagrant
 		      git clone https://github.com/jwbensley/Etherate.git
 		      cd Etherate
 		      ./configure.sh
