@@ -129,7 +129,7 @@ Vagrant.configure("2") do |config|
 # Run shell configuration commands for each VM  
 
 
-   config.vm.provision "shell", inline: <<-SHELL, env:{"VAGRANT_ROLE" => VAGRANT_ROLE, "REMOTE_IRISIP"=>REMOTE_IRISIP, "LOCAL_IRISIP"=>LOCAL_IRISIP, "SSH_PORT"=>SSH_PORT, "LOCALIP"=>LOCALIP, "DNS"=>DNS }
+   config.vm.provision "shell", inline: <<-SHELL, env:{"VAGRANT_ROLE" => VAGRANT_ROLE, "LOCAL_IRISIP"=>LOCAL_IRISIP, "SSH_PORT"=>SSH_PORT, "LOCALIP"=>LOCALIP, "DNS"=>DNS }
 
 #   config.vm.provision "shell", inline: <<-SHELL
 
@@ -137,7 +137,6 @@ Vagrant.configure("2") do |config|
 # VAGRANT_ROLE imported from Vagrantfile
 export VAGRANT_ROLE=$VAGRANT_ROLE
 export LOCAL_IRISIP=$LOCAL_IRISIP
-##%% export REMOTE_IRISIP=$REMOTE_IRISIP
 export SSH_PORT=$SSH_PORT
 echo "ABC"
 echo "Role is" $VAGRANT_ROLE
