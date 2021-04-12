@@ -78,7 +78,7 @@ config.vm.network "forwarded_port", guest: 59842, host: 1234
 
 #   config.vm.network "private_network", ip: LOCALIP, virtualbox__intnet: "pxe test 2"
   config.vm.network "public_network", bridge: BRIDGE_INTERFACE
-  config.vm.network "private_network", ip: LOCAL_IRISIP, virtualbox__intnet: "irisnet"
+  config.vm.network "private_network", ip: LOCAL_IRISIP, virtualbox__intnet: "mars irisnet"
 
  # This is for the jumphost
   config.vm.provider "virtualbox" do |vb|
@@ -129,8 +129,7 @@ config.vm.network "forwarded_port", guest: 59842, host: 1234
 # Run shell configuration commands for each VM  
 
 
-###   config.vm.provision "shell", inline: <<-SHELL, env:{"VAGRANT_ROLE" => VAGRANT_ROLE, "REMOTE_IRISIP"=>REMOTE_IRISIP, "LOCAL_IRISIP"=>LOCAL_IRISIP, "SSH_PORT"=>SSH_PORT, "LOCALIP"=>LOCALIP, "DNS"=>DNS }
-   config.vm.provision "shell", inline: <<-SHELL, env:{"VAGRANT_ROLE" => VAGRANT_ROLE, "LOCAL_IRISIP"=>LOCAL_IRISIP, "SSH_PORT"=>SSH_PORT, "LOCALIP"=>LOCALIP }
+   config.vm.provision "shell", inline: <<-SHELL, env:{"VAGRANT_ROLE" => VAGRANT_ROLE, "LOCAL_IRISIP"=>LOCAL_IRISIP, "SSH_PORT"=>SSH_PORT, "LOCALIP"=>LOCALIP, "DNS"=>DNS }
 
 #   config.vm.provision "shell", inline: <<-SHELL
 
@@ -138,7 +137,6 @@ config.vm.network "forwarded_port", guest: 59842, host: 1234
 # VAGRANT_ROLE imported from Vagrantfile
 export VAGRANT_ROLE=$VAGRANT_ROLE
 export LOCAL_IRISIP=$LOCAL_IRISIP
-##%% export REMOTE_IRISIP=$REMOTE_IRISIP
 export SSH_PORT=$SSH_PORT
 echo "ABC"
 echo "Role is" $VAGRANT_ROLE
