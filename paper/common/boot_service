@@ -381,6 +381,8 @@ echo "S-SA Service start attempt." > $MINION_SERVICE
 
 echo "S-Up Service Up" > $MINION_SERVICE
 
+echo "S-Sec Service Unpublished" > $MINION_SERVICE
+
 # Publish service
 
 ovs-ofctl del-flows $BRIDGE in_port=$MPORT
