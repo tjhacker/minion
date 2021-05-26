@@ -3,7 +3,7 @@
 # etherate test service 
 # Purpose: start the minion services necessary for remote etherate testing
 
-# Syntax: etherate_service -m <minion port> -r <hub|spoke> -b <bridge to connection minion port to>
+# Syntax: etherate_service (start|stop|unpublish) -m <minion port> -r <hub|spoke> -b <bridge to connection minion port to>
 
 SUBCOMMAND=$1
 OPTERR=1
@@ -11,6 +11,7 @@ MPORT=""
 BRIDGE=""
 
 # Process options 
+shift
 while getopts m:r:b:h option
 	do
 	case "${option}" 
@@ -64,104 +65,174 @@ if [[ `cat $MINION_STATUS | grep -v "State-Up"` ]]; then
 fi
 
 
-if [[ `cat $MINION_SERVICE | grep "S-Up"` ]]; then
-	echo "Service port is already up."
-	exit 0
-fi
+# Process subcommands
+case "$SUBCOMMAND" in
 
-echo "Start" > $MINION_SERVICE
+	status) echo "Status"
+			cat $MINION_SERVICE
+			exit 0;
+		;;
+	start)  echo "Start" 
+	
+			if [[ `cat $MINION_SERVICE | grep "S-Up"` ]]; then
+				echo "Service port is already up."
+				exit 0
+			fi
+		
+		
+			# 2. Check minion service prereqs for this service (state S-PR)
+			# Ensure packages are installed - if not, install them
+			# be aware of serial ordering constraints
+		
+		
+			# Create internal OVS port to attach service to.
+		
+			ovs-vsctl add-port $BRIDGE $MPORT -- set interface $MPORT type=internal
+			if [ $? != 0 ]; then
+				echo "Error adding new port to bridge."
+				exit 1
+			fi 
 
-# 2. Check minion service prereqs for this service (state S-PR)
-# Ensure packages are installed - if not, install them
-# be aware of serial ordering constraints
+			echo "Start" > $MINION_SERVICE
+		
+		
+			# Start with service unpublished.
+			ovs-ofctl add-flow $BRIDGE in_port=$MPORT,action=drop
+		
+			if [ $? != 0 ]; then
+				echo "Error calling add-flow to unpublish service."
+				exit 1
+			fi
+		
+			# Attach service and ensure it is running.
+			ip link set up dev $MPORT
+		
+			if [ $? != 0 ]; then
+				echo "Error bringing up new port link"
+				exit 1
+			fi
+		
+			echo "S-PR Service requisites verified" > $MINION_SERVICE
+		
+			# 3. Create configuraion files (S-LC)
+			#    configure service config files; this would need to be done in the specific service script - be aware of serial ordering constraints.  
+		
+			echo "S-LC Create configuration files" > $MINION_SERVICE
+		
+			# Use supervisor on hub to keep etherate test point active
+		
+			if [ $VAGRANT_ROLE == "hub" ]
+			then
+				# Get Etherate to check minion ports
+				##    timeout -s INT 120 ./etherate -i vxlan0 -Q 1000 1000 -t 5
+				##	      pushd /usr/local/src
+				pushd /home/vagrant
+				git clone https://github.com/jwbensley/Etherate.git
+				cd Etherate
+				./configure.sh
+				make install
+				popd
+				cat /vagrant_data/supervisor >> /etc/supervisord.conf 
+			fi
+		
+			# 4. Start process that uses the minion port (vxlan0)
+			#   start processes; this is done in the specific service script - be aware of serial ordering constraints (S-SA Start Attempt -> S-Up Service Up) - where is state maintained?
+			echo "S-SA Start service attempt" > $MINION_SERVICE
+		
+			if [ $VAGRANT_ROLE == "hub" ]
+			then
+				systemctl start supervisord
+				### /usr/local/bin/etherate -r -i vxlan0 &
+			fi
+		
+			echo "S-Up Service Up" > $MINION_SERVICE
+		
+		
+			# Publish service
+		
+			ovs-ofctl del-flows $BRIDGE in_port=$MPORT
+		
+			if [ $? != 0 ]; then
+				echo "Error calling del-flow to publish service."
+				exit 1
+			fi
+		
+			echo "S-Pub Service published" > $MINION_SERVICE
+		
+			exit 0
+		;;
+
+	unpublish)   echo "Unpublish"  
+			# Check state
+
+			if [[ ! `cat $MINION_SERVICE | grep "S-Pub"` ]]; then
+				echo "Service is not currently publshed."
+				exit 0
+			fi
+		
+			# Unpublish service
+			ovs-ofctl add-flow $BRIDGE in_port=$MPORT,action=drop
+		
+			if [ $? != 0 ]; then
+				echo "Error calling add-flow to unpublish service."
+				exit 1
+			fi 
+
+			echo "S-Sec Service Unpublished" > $MINION_SERVICE
+			exit 0
+		
+		
+		;;
+
+	publish)   echo "Publish"  
+			# Publish service
+
+			# Check state
+
+			if [[ ! `cat $MINION_SERVICE | grep "S-Sec"` ]]; then
+				echo "Service is not currently Unpublshed."
+				exit 0
+			fi
+		
+			ovs-ofctl del-flows $BRIDGE in_port=$MPORT
+		
+			if [ $? != 0 ]; then
+				echo "Error calling del-flow to publish service."
+				exit 1
+			fi
+		
+			echo "S-Pub Service published" > $MINION_SERVICE
+			exit 0
+		;;
+
+	stop) echo "Stop" 
+			# Shut down service
+
+			# Check state
+
+			if [[ ! `cat $MINION_SERVICE | grep "S-Sec"` ]]; then
+				echo "Service is not currently Unpublshed. Cannot shut down."
+				exit 0
+			fi
+			
+			systemctl stop supervisord
+
+			if [ $? != 0 ]; then
+				echo "Error stopping service."
+				exit 1
+			fi
 
 
-# Create internal OVS port to attach service to.
+			ovs-vsctl del-port $BRIDGE $MPORT 
+			if [ $? != 0 ]; then
+				echo "Error adding new port to bridge."
+				exit 1
+			fi 
 
-ovs-vsctl add-port $BRIDGE $MPORT -- set interface $MPORT type=internal
-if [ $? != 0 ]; then
-	echo "Error adding new port to bridge."
-	exit 1
-fi
+			echo "S-Dn Service down" > $MINION_SERVICE
+			exit 0
 
-
-
-
-# Start with service unpublished.
-ovs-ofctl add-flow $BRIDGE in_port=$MPORT,action=drop
-
-if [ $? != 0 ]; then
-	echo "Error calling add-flow to unpublish service."
-	exit 1
-fi
-
-# Attach service and ensure it is running.
-ip link set up dev $MPORT
-
-if [ $? != 0 ]; then
-	echo "Error bringing up new port link"
-	exit 1
-fi
-
-echo "S-PR Service requisites verified" > $MINION_SERVICE
-
-# 3. Create configuraion files (S-LC)
-#    configure service config files; this would need to be done in the specific service script - be aware of serial ordering constraints.  
-
-echo "S-LC Create configuration files" > $MINION_SERVICE
-
-# Use supervisor on hub to keep etherate test point active
-
-	if [ $VAGRANT_ROLE == "hub" ]
-	then
-
-	# Get Etherate to check minion ports
-	##    timeout -s INT 120 ./etherate -i vxlan0 -Q 1000 1000 -t 5
-##		      pushd /usr/local/src
-		      pushd /home/vagrant
-		      git clone https://github.com/jwbensley/Etherate.git
-		      cd Etherate
-		      ./configure.sh
-		      make install
-			popd
-		cat /vagrant_data/supervisor >> /etc/supervisord.conf 
-
-	fi
-
-# 4. Start process that uses the minion port (vxlan0)
-#   start processes; this is done in the specific service script - be aware of serial ordering constraints (S-SA Start Attempt -> S-Up Service Up) - where is state maintained?
-echo "S-SA Start service attempt" > $MINION_SERVICE
+		;;
 
 
-	if [ $VAGRANT_ROLE == "hub" ]
-	then
-		systemctl start supervisord
-		### /usr/local/bin/etherate -r -i vxlan0 &
-	fi
-
-
-echo "S-Up Service Up" > $MINION_SERVICE
-
-
-# Publish service
-
-ovs-ofctl del-flows $BRIDGE in_port=$MPORT
-
-if [ $? != 0 ]; then
-	echo "Error calling del-flow to publish service."
-	exit 1
-fi
-
-echo "S-Pub Service published" > $MINION_SERVICE
-
-exit 0
-
-
-
-
-# 5.  check correctness and correct operating of the service;  - how can I check this?
-# what needs to be confirmed: service is running; service is connected to the vxlan adapter; service responds to requests
-  # Check dnmasq, lightthpd, and squid
-
-
-
+esac
