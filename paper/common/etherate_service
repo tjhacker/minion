@@ -3,7 +3,7 @@
 # etherate test service 
 # Purpose: start the minion services necessary for remote etherate testing
 
-# Syntax: etherate_service (start|stop|unpublish) -m <minion port> -r <hub|spoke> -b <bridge to connection minion port to>
+# Syntax: etherate_service (start|stop|publish|unpublish) -m <minion port> -r <hub|spoke> -b <bridge to connection minion port to>
 
 SUBCOMMAND=$1
 OPTERR=1
@@ -132,6 +132,7 @@ case "$SUBCOMMAND" in
 				./configure.sh
 				make install
 				popd
+				cp /etc/supervisord.conf /etc/supervisord.conf.backup
 				cat /vagrant_data/supervisor >> /etc/supervisord.conf 
 			fi
 		
@@ -141,8 +142,20 @@ case "$SUBCOMMAND" in
 		
 			if [ $VAGRANT_ROLE == "hub" ]
 			then
-				systemctl start supervisord
-				### /usr/local/bin/etherate -r -i vxlan0 &
+
+				# Check is supervisord is already running 
+				systemctl is-active --quiet supervisord
+				if [[ $? != 0 ]]; then
+					systemctl start supervisord
+				else
+					supervisorctl update etherate
+					supervisorctl status etherate
+					if [[ $? != 0 ]]; then
+j						supervisorctl start ehterate
+					fi
+					systemctl start supervisord
+					### /usr/local/bin/etherate -r -i vxlan0 &
+				fi
 			fi
 		
 			echo "S-Up Service Up" > $MINION_SERVICE
@@ -208,12 +221,16 @@ case "$SUBCOMMAND" in
 	stop) echo "Stop" 
 			# Shut down service
 
-			# Check state
 
-			if [[ ! `cat $MINION_SERVICE | grep "S-Sec"` ]]; then
-				echo "Service is not currently Unpublshed. Cannot shut down."
-				exit 0
-			fi
+			# Unpublish service
+			ovs-ofctl add-flow $BRIDGE in_port=$MPORT,action=drop
+		
+			if [ $? != 0 ]; then
+				echo "Error calling add-flow to unpublish service."
+				exit 1
+			fi 
+
+			echo "S-Sec Service Unpublished" > $MINION_SERVICE
 			
 			systemctl stop supervisord
 
@@ -221,6 +238,8 @@ case "$SUBCOMMAND" in
 				echo "Error stopping service."
 				exit 1
 			fi
+
+			cp /etc/supervisord.conf.backup /etc/supervisord.conf
 
 
 			ovs-vsctl del-port $BRIDGE $MPORT 
