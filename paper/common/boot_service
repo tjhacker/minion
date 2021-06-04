@@ -354,8 +354,11 @@ case "$SUBCOMMAND" in
 			if [[ $? != 0 ]]; then
 				systemctl start supervisord
 			else
-				supervisorctl reread
-				supervisorctl start reload-dhcpopts
+				supervisorctl update reload-dhcpopts
+				supervisorctl status reload-dhcpopts
+				if [[ $? != 0 ]]; then
+					supervisorctl start reload-dhcpopts
+				fi
 			fi
 
 
